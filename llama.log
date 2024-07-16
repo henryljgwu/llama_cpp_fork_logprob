@@ -1,0 +1,5 @@
+[1720916313] 
+example usage:
+[1720916313] 
+    E:\work\fork_repo\llama.cpp\llama-simple.exe -m model.gguf -p "Hello my name is" -n 32 -t "H,e,l,o"
+[1720916313] 
