@@ -63,7 +63,7 @@ int main(int argc, char ** argv) {
 
     // 初始化模型参数
     llama_model_params model_params = llama_model_params_from_gpt_params(params);
-    model_params.n_gpu_layers = n_gpu_layers; // 设置存储在VRAM中的层数
+    // model_params.n_gpu_layers = n_gpu_layers; // 设置存储在VRAM中的层数
     model_params.main_gpu = 0; // 设置使用的主要GPU
 
     // 加载模型并配置到GPU RAM中
