@@ -1,6 +1,5 @@
 # Define the default target now so that it is always the first target
 BUILD_TARGETS = \
-	llama-server \
 	llama-simple 
 
 # Binaries only useful for tests
@@ -1128,9 +1127,11 @@ llama-infill: examples/infill/infill.cpp \
 	$(CXX) $(CXXFLAGS) $(filter-out %.h $<,$^) $(call GET_OBJ_FILE, $<) -o $@ $(LDFLAGS)
 
 llama-simple: examples/simple/simple.cpp \
+	examples/server/httplib.h \
+	common/json.hpp \
 	$(OBJ_ALL)
 	$(CXX) $(CXXFLAGS) -c $< -o $(call GET_OBJ_FILE, $<)
-	$(CXX) $(CXXFLAGS) $(filter-out %.h $<,$^) $(call GET_OBJ_FILE, $<) -o $@ $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) $(filter-out %.h $<,$^) $(call GET_OBJ_FILE, $<) -o $@ $(LDFLAGS) $(LWINSOCK2)
 
 llama-tokenize: examples/tokenize/tokenize.cpp \
 	$(OBJ_ALL)
