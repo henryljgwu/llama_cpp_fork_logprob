@@ -1,5 +1,6 @@
 set(TARGET llama-simple)
-add_executable(${TARGET} simple.cpp)
+add_executable(${TARGET} simple.cpp ../server/httplib.h ../../common/json.hpp)
 install(TARGETS ${TARGET} RUNTIME)
 target_link_libraries(${TARGET} PRIVATE common llama ${CMAKE_THREAD_LIBS_INIT})
+TARGET_LINK_LIBRARIES(${TARGET} PRIVATE ws2_32)
 target_compile_features(${TARGET} PRIVATE cxx_std_11)

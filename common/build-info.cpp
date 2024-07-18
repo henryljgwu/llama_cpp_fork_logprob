@@ -1,4 +1,4 @@
-int LLAMA_BUILD_NUMBER = 5;
-char const *LLAMA_COMMIT = "d294138";
-char const *LLAMA_COMPILER = "cc (GCC) 13.2.0";
-char const *LLAMA_BUILD_TARGET = "x86_64-w64-mingw32";
+int LLAMA_BUILD_NUMBER = 8;
+char const *LLAMA_COMMIT = "f41f8e7";
+char const *LLAMA_COMPILER = "MSVC 19.40.33811.0";
+char const *LLAMA_BUILD_TARGET = "x64";
