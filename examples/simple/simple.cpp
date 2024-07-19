@@ -18,7 +18,7 @@ static void print_usage(int argc, char ** argv, const gpt_params & params) {
     gpt_params_print_usage(argc, argv, params);
 
     LOG_TEE("\nexample usage:\n");
-    LOG_TEE("\n    %s -m model.gguf -p \"Hello my name is\" -n 32 -t \"H,e,l,o\" -g 10\n", argv[0]);
+    LOG_TEE("\n    %s -m model.gguf -ngl 10\n");
     LOG_TEE("\n");
 }
 
@@ -48,7 +48,7 @@ std::vector<float> compute_softmax(const float* logits, int n_vocab) {
     return probs;
 }
 
-void handle_props(const httplib::Request &req, httplib::Response &res, llama_model* model, llama_context* ctx) {
+void handle_props(const httplib::Request &req, httplib::Response &res, llama_model* model, const llama_context_params& ctx_params) {
     json json_req;
 
     try {
@@ -69,12 +69,21 @@ void handle_props(const httplib::Request &req, httplib::Response &res, llama_mod
         return;
     }
 
+    // 初始化上下文
+    llama_context * ctx = llama_new_context_with_model(model, ctx_params);
+    if (ctx == NULL) {
+        res.status = 500;
+        res.set_content("{\"error\": \"Failed to create context\"}", "application/json");
+        return;
+    }
+
     // 将提示语进行token化
     std::vector<llama_token> tokens_list = ::llama_tokenize(ctx, prompt, true);
     const int n_ctx = llama_n_ctx(ctx);
     if (tokens_list.size() > n_ctx) {
         res.status = 400;
         res.set_content("{\"error\": \"Prompt is too long\"}", "application/json");
+        llama_free(ctx);
         return;
     }
 
@@ -87,6 +96,7 @@ void handle_props(const httplib::Request &req, httplib::Response &res, llama_mod
     if (llama_decode(ctx, batch) != 0) {
         res.status = 500;
         res.set_content("{\"error\": \"Failed to decode\"}", "application/json");
+        llama_free(ctx);
         return;
     }
 
@@ -112,14 +122,14 @@ void handle_props(const httplib::Request &req, httplib::Response &res, llama_mod
 
     // 释放资源
     llama_batch_free(batch);
+    llama_free(ctx);
 }
 
-void handle_shutdown(const httplib::Request &req, httplib::Response &res, httplib::Server* svr, llama_context* ctx, llama_model* model) {
+void handle_shutdown(const httplib::Request &req, httplib::Response &res, httplib::Server* svr, llama_model* model) {
     res.set_content("{\"message\": \"Shutting down\"}", "application/json");
     svr->stop();
 
     // 释放资源
-    llama_free(ctx);
     llama_free_model(model);
     llama_backend_free();
 }
@@ -153,21 +163,16 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // 初始化上下文
+    // 初始化上下文参数
     llama_context_params ctx_params = llama_context_params_from_gpt_params(params);
-    llama_context * ctx = llama_new_context_with_model(model, ctx_params);
-    if (ctx == NULL) {
-        fprintf(stderr , "%s: error: failed to create the llama_context\n" , __func__);
-        return 1;
-    }
 
     // 注册POST处理函数
-    svr.Post("/props", [&model, &ctx](const httplib::Request &req, httplib::Response &res) {
-        handle_props(req, res, model, ctx);
+    svr.Post("/props", [&model, &ctx_params](const httplib::Request &req, httplib::Response &res) {
+        handle_props(req, res, model, ctx_params);
     });
 
-    svr.Post("/shutdown", [&svr, &ctx, &model](const httplib::Request &req, httplib::Response &res) {
-        handle_shutdown(req, res, &svr, ctx, model);
+    svr.Post("/shutdown", [&svr, &model](const httplib::Request &req, httplib::Response &res) {
+        handle_shutdown(req, res, &svr, model);
     });
 
     // 设置端口并启动服务器
